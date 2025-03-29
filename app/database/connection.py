@@ -1,5 +1,5 @@
 from settings import settings
-from psycopg2 import connect
+from psycopg import connect
 from sqlalchemy import create_engine
 from .models import Base
 from mimesis import Person, Datetime, Finance, Text
@@ -10,17 +10,27 @@ from urllib.parse import quote_plus
 DB_CONFIG = {
     'dbname': settings.DB_NAME,
     'user': settings.DB_USER,
-    'password': quote_plus(settings.DB_PASSWORD),
+    'password': settings.DB_PASSWORD,
     'host': settings.DB_HOST,
     'port': settings.DB_PORT,
 }
 
 
+'''with connect(**DB_CONFIG) as conn:
+    with conn.cursor() as cur:
+        cur.execute("""CREATE TABLE test (
+                    id serial PRYMARY KEY,
+                    num integer)"""
+        )
+        conn.commit()'''
+
+
+
+
 class EmployeeCatalog:
     """Класс для проведения операции над базой данных работников"""
     def __init__(self):
-        self.conn = connect(**DB_CONFIG)
-        self.engine = create_engine(settings.DATABASE_URL)
+        #self.engine = create_engine(settings.DATABASE_URL)
         self.person = Person(Locale.RU)
         self.datetime = Datetime()
         self.finance = Finance()
@@ -28,12 +38,14 @@ class EmployeeCatalog:
 
         self.init_tables()
 
-    def __del__(self):
-        if hasattr(self, 'conn') and self.conn:
-            self.conn.close()
-        if hasattr(self, 'engine'):
-            self.engine.dispose()
     
     def init_tables(self):
         """Определение структуры таблиц"""
-        Base.metadata.create_all(self.engine)
+        with connect(settings.DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("""CREATE TABLE test (
+                    id serial PRIMARY KEY,
+                    num integer)"""
+                )
+                conn.commit()
+        print('OK')
