@@ -69,6 +69,19 @@ class Employee(Base):
         Index("idx_emp_name_lower", func.lower(last_name), func.lower(first_name)),
     )
 
+    def get_full_name(self) -> str:
+        if self.patronymic:
+            return f"{self.last_name} {self.first_name} {self.patronymic}"
+        return f"{self.last_name} {self.first_name}"
+
+    def get_short_name(self) -> str:
+        if self.patronymic:
+            return f"{self.last_name} {self.first_name[0]}. {self.patronymic[0]}."
+        return f"{self.last_name} {self.first_name[0]}."
+
+    def __repr__(self) -> str:
+        return f"<Employee id={self.id!r} name={self.get_full_name}"
+
 
 # Добавляем валидацию через event handler
 @event.listens_for(Session, "before_flush")
