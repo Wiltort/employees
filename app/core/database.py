@@ -14,6 +14,7 @@ DB_CONFIG = {
     'port': settings.DB_PORT,
 }
 
+
 class EmployeeCatalog:
     """Класс для проведения операции над базой данных работников"""
     def __init__(self):
@@ -28,3 +29,7 @@ class EmployeeCatalog:
     def init_tables(self):
         """Определение структуры таблиц"""
         self.base.metadata.create_all(self.engine)
+
+    def init_data(self):
+        """Генерация начальных данных в таблицах"""
+        pass

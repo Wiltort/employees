@@ -1,7 +1,13 @@
-from typing import List
-from typing import Optional
-from sqlalchemy import ForeignKey, CheckConstraint, event
-from sqlalchemy import String, Date, Numeric
+from sqlalchemy import (
+    ForeignKey,
+    CheckConstraint,
+    event,
+    Index,
+    func,
+    String,
+    Date,
+    Numeric,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase, Session
 
 
@@ -25,7 +31,7 @@ class Position(Base):
     level: Mapped[int] = mapped_column(nullable=False)
 
     __table_args__ = (
-        CheckConstraint('level >= 1 AND level <= 5', name='level_range_check'),
+        CheckConstraint("level >= 1 AND level <= 5", name="level_range_check"),
     )
 
 
@@ -52,13 +58,20 @@ class Employee(Base):
         return self.manager.position.level if self.manager else None
 
     __table_args__ = (
-        CheckConstraint('hire_date <= CURRENT_DATE', name='valid_hire_date'),
-        CheckConstraint('manager_id != id OR manager_id IS NULL', name='valid_manager'),
-        CheckConstraint('salary > 0', name='positive_salary'),
+        CheckConstraint("hire_date <= CURRENT_DATE", name="valid_hire_date"),
+        CheckConstraint("manager_id != id OR manager_id IS NULL", name="valid_manager"),
+        CheckConstraint("salary > 0", name="positive_salary"),
+        Index("idx_emp_manager", manager_id),
+        Index("idx_emp_position", position_id),
+        Index("idx_emp_name", last_name, first_name),
+        Index("idx_emp_hire_date", hire_date),
+        Index("idx_emp_salary", salary),
+        Index("idx_emp_name_lower", func.lower(last_name), func.lower(first_name)),
     )
 
+
 # Добавляем валидацию через event handler
-@event.listens_for(Session, 'before_flush')
+@event.listens_for(Session, "before_flush")
 def validate_manager_level(session, flush_context, instances):
     for obj in session.new.union(session.dirty):
         if isinstance(obj, Employee) and obj.manager:
