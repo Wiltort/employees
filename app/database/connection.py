@@ -15,18 +15,6 @@ DB_CONFIG = {
     'port': settings.DB_PORT,
 }
 
-
-'''with connect(**DB_CONFIG) as conn:
-    with conn.cursor() as cur:
-        cur.execute("""CREATE TABLE test (
-                    id serial PRYMARY KEY,
-                    num integer)"""
-        )
-        conn.commit()'''
-
-
-
-
 class EmployeeCatalog:
     """Класс для проведения операции над базой данных работников"""
     def __init__(self):
@@ -35,16 +23,9 @@ class EmployeeCatalog:
         self.datetime = Datetime()
         self.finance = Finance()
         self.text = Text()
-
+        self.base = Base
         self.init_tables()
 
-    
     def init_tables(self):
         """Определение структуры таблиц"""
-        with connect(**DB_CONFIG) as conn:
-            with conn.cursor() as cur:
-                cur.execute("""CREATE TABLE IF NOT EXISTS test (
-                    id serial PRIMARY KEY,
-                    num integer)"""
-                )
-                conn.commit()
+        self.base.metadata.create_all(self.engine)
