@@ -14,7 +14,7 @@ class Settings:
     DB_PASSWORD = os.getenv('DB_PASSWORD', '')
     DB_NAME = os.getenv('DB_NAME', 'employee_catalog')
 
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     MODE = os.getenv('DEBUG', 'dev')
     TEST_DATA_GENERATION = os.getenv('TEST_DATA_GENERATION', 'True').lower() == 'true'
@@ -25,4 +25,3 @@ class Settings:
 
 
 settings = Settings()
-print(settings.DATABASE_URL)

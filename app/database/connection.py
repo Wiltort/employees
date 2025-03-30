@@ -30,7 +30,7 @@ DB_CONFIG = {
 class EmployeeCatalog:
     """Класс для проведения операции над базой данных работников"""
     def __init__(self):
-        #self.engine = create_engine(settings.DATABASE_URL)
+        self.engine = create_engine(settings.DATABASE_URL)
         self.person = Person(Locale.RU)
         self.datetime = Datetime()
         self.finance = Finance()
@@ -41,11 +41,10 @@ class EmployeeCatalog:
     
     def init_tables(self):
         """Определение структуры таблиц"""
-        with connect(settings.DATABASE_URL) as conn:
+        with connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur.execute("""CREATE TABLE test (
+                cur.execute("""CREATE TABLE IF NOT EXISTS test (
                     id serial PRIMARY KEY,
                     num integer)"""
                 )
                 conn.commit()
-        print('OK')

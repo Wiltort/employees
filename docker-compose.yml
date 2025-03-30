@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-wallet_hub}
+      POSTGRES_DB: ${DB_NAME:-employees_db}
     ports:
       - "5432:5432"
     volumes:
@@ -24,7 +24,7 @@ services:
       DB_PORT: 5432
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-wallet_hub}
+      DB_NAME: ${DB_NAME:-employees_db}
     depends_on:
       postgres:
         condition: service_healthy
