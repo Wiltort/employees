@@ -1,4 +1,4 @@
-from database.connection import EmployeeCatalog
+from core.database import EmployeeCatalog
 
 def main():
     catalog = EmployeeCatalog()

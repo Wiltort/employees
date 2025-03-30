@@ -1,10 +1,9 @@
-from settings import settings
+from core.settings import settings
 from psycopg import connect
 from sqlalchemy import create_engine
-from .models import Base
+from employees.models import Base
 from mimesis import Person, Datetime, Finance, Text
 from mimesis.locales import Locale
-from urllib.parse import quote_plus
 
 
 DB_CONFIG = {
