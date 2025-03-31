@@ -1,10 +1,9 @@
 from core.settings import settings
 from core.cli.commands import CommandLine
-from .localization import load_messages
+from .localization import messages
 
 
 def cli_run():
-    messages = load_messages()
     cli = CommandLine()
     print(messages['disclaimer']['header'])
     print(messages['disclaimer']['title'])
@@ -15,3 +14,14 @@ def cli_run():
     print(messages['disclaimer']['description'])
     print(messages['disclaimer']['warning'])
     print(messages['disclaimer']['help_prompt'])
+    while not cli.should_exit:
+        input_line = input('>>> ').split()
+        input_command = input_line[0]
+        if len(input_line) > 1:
+            options = input_line[1:]
+        else:
+            options = None
+        try:
+            eval(f'cli.{input_command}(options={options})')
+        except Exception as e:
+            print(e)

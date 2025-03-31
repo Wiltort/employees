@@ -15,3 +15,6 @@ def load_messages() -> Dict[str, Any]:
             return yaml.safe_load(f)
     except FileNotFoundError:
         raise RuntimeError(f"File {file} not found")
+
+
+messages = load_messages()
