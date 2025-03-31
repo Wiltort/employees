@@ -24,13 +24,15 @@ disclaimer:
 
 commands:
   help:
-    usage: "Использование: python employee_catalog.py [КОМАНДА] [ОПЦИИ]"
-    description: "Управление каталогом сотрудников компании"
+    usage: "help [-v | -a]"
+    description: "Справка по командам Employee Database Management Tool"
     options:
       - "                Показать эту справку"
-      - " -v             Показать версию программы"
-      - " -a             О программе"
-
+      - "-v              Показать версию программы"
+      - "-a              О программе"
+  quit:
+    usage: "quit"
+    description: "Выход из программы Employee Database Management Tool"
   list:
     description: "Показать список сотрудников"
     options:
@@ -45,6 +47,8 @@ errors:
   validation:
     date: "Некорректный формат даты. Используйте ГГГГ-ММ-ДД"
     salary: "Зарплата должна быть положительным числом"
+  cli:
+    command: "Неизвестная команда:"
 
 success:
   employee_added: "✅ Сотрудник успешно добавлен (ID: {id})"
@@ -56,3 +60,5 @@ ui:
     add_employee: "Добавление нового сотрудника"
     update_employee: "Обновление данных сотрудника ID: {id}"
     exit: "Выход из программы..."
+  info:
+    options: "Опции:"

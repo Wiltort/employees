@@ -7,12 +7,6 @@ def cli_run():
     cli = CommandLine()
     print(messages['disclaimer']['header'])
     print(messages['disclaimer']['title'])
-    print(messages['disclaimer']['copyright'].format(
-        year=messages['meta']['year'],
-        author=messages['meta']['author']
-    ))
-    print(messages['disclaimer']['description'])
-    print(messages['disclaimer']['warning'])
     print(messages['disclaimer']['help_prompt'])
     while not cli.should_exit:
         input_line = input('>>> ').split()
@@ -23,5 +17,5 @@ def cli_run():
             options = None
         try:
             eval(f'cli.{input_command}(options={options})')
-        except Exception as e:
-            print(e)
+        except AttributeError as e:
+            print(messages['errors']['cli']['command'], input_command)
