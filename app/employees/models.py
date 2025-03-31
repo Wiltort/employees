@@ -17,6 +17,10 @@ POSITION_HIERARCHY = [
     ("Team Lead", 3),
     ("Senior Developer", 4),
     ("Developer", 5),
+    ("Analyst", 5),
+    ("Designer", 5),
+    ("HR Specialist", 5),
+    ("Tester", 5),
 ]
 
 
@@ -29,6 +33,8 @@ class Position(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     level: Mapped[int] = mapped_column(nullable=False)
+
+    employees: Mapped[list["Employee"]] = relationship(back_populates="position")
 
     __table_args__ = (
         CheckConstraint("level >= 1 AND level <= 5", name="level_range_check"),
@@ -59,7 +65,7 @@ class Employee(Base):
 
     __table_args__ = (
         CheckConstraint("hire_date <= CURRENT_DATE", name="valid_hire_date"),
-        CheckConstraint("manager_id != id OR manager_id IS NULL", name="valid_manager"),
+        CheckConstraint("manager_id != id", name="valid_manager"),
         CheckConstraint("salary > 0", name="positive_salary"),
         Index("idx_emp_manager", manager_id),
         Index("idx_emp_position", position_id),
