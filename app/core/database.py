@@ -5,22 +5,30 @@ from sqlalchemy.orm import Session
 from employees.models import Base, POSITION_HIERARCHY, Position, Employee
 from mimesis import Person, Datetime, Finance, Text
 from mimesis.locales import Locale
+from mimesis.enums import Gender
+import random
 
 
 DB_CONFIG = {
-    'dbname': settings.DB_NAME,
-    'user': settings.DB_USER,
-    'password': settings.DB_PASSWORD,
-    'host': settings.DB_HOST,
-    'port': settings.DB_PORT,
+    "dbname": settings.DB_NAME,
+    "user": settings.DB_USER,
+    "password": settings.DB_PASSWORD,
+    "host": settings.DB_HOST,
+    "port": settings.DB_PORT,
+}
+
+lang_dict = {
+    "ru": Locale.RU,
+    "en": Locale.EN,
 }
 
 
 class EmployeeCatalog:
     """Class for managing employees database"""
+
     def __init__(self):
         self.engine = create_engine(settings.DATABASE_URL)
-        self.person = Person(Locale.RU)
+        self.person = Person(lang_dict[settings.LANGUAGE])
         self.datetime = Datetime()
         self.finance = Finance()
         self.text = Text()
@@ -31,6 +39,8 @@ class EmployeeCatalog:
     def init_tables(self):
         """Definition of tables"""
         self.base.metadata.create_all(self.engine)
+        print('OK')
+        self.init_data()
 
     def truncate_all_tables(self):
         """Deletes all data in all tables"""
@@ -55,14 +65,48 @@ class EmployeeCatalog:
                     data.append(Position(title=title, level=level))
                 session.add_all(data)
                 session.commit()
-        with Session(self.engine) as session:
-            for level in range(1, 5):
+        emp_count = 0
+        managers = {}
+        for level in range(1, 5):
+            data = []
+            with Session(self.engine) as session:
                 stmt = select(Position.id).where(Position.level == level)
                 position_ids = list(session.scalars(stmt))
+                managers[level] = []
                 if not position_ids:
                     continue
-                managers_count = 10 * (level - 1) + 5
+                managers_count = int((0.1 ** (5 - level)) * rows)
+                emp_count += managers_count
+                print(managers_count)
+                for _ in range(managers_count):
+                    position_id = random.choice(position_ids)
+                    if level != 1:
+                        manager_id = random.choice(managers[level - 1])
+                    else:
+                        manager_id = None
+                    manager = self.generate_employee(position_id=position_id, manager_id=manager_id)
+                    managers[level].append(manager.id)
+                    print(managers)
+                    data.append(manager)
+                session.add_all(data)
+                session.commit()
 
+    def generate_employee(
+        self, position_id: int | None = None, manager_id: int | None = None
+    ) -> Employee:
+        """Generate data for one employee"""
+        data = {}
+        gender = random.choice([Gender.MALE, Gender.FEMALE])
+        data["first_name"] = self.person.first_name(gender=gender)
+        data["last_name"] = self.person.last_name(gender=gender)
+        data["patronymic"] = (
+            self.person.surname(gender=gender) if settings.LANGUAGE == "ru" else None
+        )
+        data["hire_date"] = self.datetime.date(start=2015, end=2024)
+        data["salary"] = self.finance.price(minimum=30000, maximum=300000)
+        data["position_id"] = position_id
+        data["manager_id"] = manager_id
+        return Employee(**data)
 
 
 employee_catalog = EmployeeCatalog()

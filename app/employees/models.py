@@ -51,7 +51,7 @@ class Employee(Base):
     position_id: Mapped[int] = mapped_column(ForeignKey("positions.id"))
     hire_date: Mapped[str] = mapped_column(Date, nullable=False)
     salary: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    manager_id: Mapped[int] = mapped_column(ForeignKey("employees.id"))
+    manager_id: Mapped[int] = mapped_column(ForeignKey("employees.id"), nullable=True)
 
     position: Mapped["Position"] = relationship(back_populates="employees")
     manager = relationship("Employee", remote_side=[id], foreign_keys=[manager_id])
@@ -92,24 +92,43 @@ class Employee(Base):
 
 # Добавляем валидацию через event handler
 @event.listens_for(Session, "before_flush")
-def validate_manager_level(session, flush_context, instances):
+def validate_employee_relations(session, flush_context, instances):
     for obj in session.new.union(session.dirty):
-        if isinstance(obj, Employee) and obj.manager:
-            if obj.manager.position.level > obj.position.level:
-                raise ValueError(
-                    messages["errors"]["validation"]["manager_level"].format(
-                        employee=obj, manager=obj.manager.id
-                    )
-                )
+        if not isinstance(obj, Employee):
+            continue
 
+        # Check for required fields
+        if not obj.position_id:
+            raise ValueError("Employee must have a position")
+            
+        # Get position from database directly
+        position = session.get(Position, obj.position_id)
+        if not position:
+            raise ValueError(f"Invalid position ID: {obj.position_id}")
 
-@event.listens_for(Session, "before_flush")
-def validate_employee_manager(session, flush_context, instances):
-    for obj in session.new.union(session.dirty):
-        if isinstance(obj, Employee) and obj.position.level > 1:
-            if not obj.manager:
-                raise ValueError(
-                    messages["errors"]["validation"]["employee_have_no_manager"].format(
-                        employee=obj
-                    )
-                )
+        # CEO validation
+        if position.level == 1:
+            if obj.manager_id:
+                raise ValueError("CEO cannot have a manager")
+            return
+
+        # Manager validation for other levels
+        if not obj.manager_id:
+            raise ValueError("Non-CEO employees must have a manager")
+            
+        # Get manager from database
+        manager = session.get(Employee, obj.manager_id)
+        if not manager:
+            raise ValueError(f"Invalid manager ID: {obj.manager_id}")
+            
+        # Get manager's position
+        manager_position = session.get(Position, manager.position_id)
+        if not manager_position:
+            raise ValueError(f"Manager {manager.id} has invalid position")
+            
+        # Hierarchy check
+        if manager_position.level >= position.level:
+            raise ValueError(
+                f"Manager's level ({manager_position.level}) must be "
+                f"lower than employee's level ({position.level})"
+            )
