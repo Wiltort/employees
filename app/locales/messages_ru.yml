@@ -13,7 +13,7 @@ disclaimer:
     ███████╗██║ ╚═╝ ██║██║     ███████╗╚██████╔╝   ██║   ███████╗███████╗
     ╚══════╝╚═╝     ╚═╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝   ╚══════╝╚══════╝
   title: "Employee Database Management Tool"
-  copyright: "(c) {year} {author} | License: {license}"
+  copyright: "(c) {year} {author}"
   description: |
     Система управления каталогом сотрудников с поддержкой 50,000+ записей.
     Иерархическая структура, расширенный поиск и CRUD-операции.
