@@ -9,6 +9,7 @@ from sqlalchemy import (
     Numeric,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase, Session
+from core.cli.localization import messages
 
 
 POSITION_HIERARCHY = [
@@ -96,6 +97,19 @@ def validate_manager_level(session, flush_context, instances):
         if isinstance(obj, Employee) and obj.manager:
             if obj.manager.position.level > obj.position.level:
                 raise ValueError(
-                    f"Менеджер {obj.manager.id} ({obj.manager.position.title}) "
-                    f"имеет более низкую позицию, чем сотрудник {obj.id} ({obj.position.title})"
+                    messages["errors"]["validation"]["manager_level"].format(
+                        employee=obj, manager=obj.manager.id
+                    )
+                )
+
+
+@event.listens_for(Session, "before_flush")
+def validate_employee_manager(session, flush_context, instances):
+    for obj in session.new.union(session.dirty):
+        if isinstance(obj, Employee) and obj.position.level > 1:
+            if not obj.manager:
+                raise ValueError(
+                    messages["errors"]["validation"]["employee_have_no_manager"].format(
+                        employee=obj
+                    )
                 )

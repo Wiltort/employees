@@ -1,6 +1,6 @@
 from core.settings import settings
 from psycopg import connect
-from sqlalchemy import create_engine, MetaData, insert
+from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.orm import Session
 from employees.models import Base, POSITION_HIERARCHY, Position, Employee
 from mimesis import Person, Datetime, Finance, Text
@@ -55,4 +55,14 @@ class EmployeeCatalog:
                     data.append(Position(title=title, level=level))
                 session.add_all(data)
                 session.commit()
-                
+        with Session(self.engine) as session:
+            for level in range(1, 5):
+                stmt = select(Position.id).where(Position.level == level)
+                position_ids = list(session.scalars(stmt))
+                if not position_ids:
+                    continue
+                managers_count = 10 * (level - 1) + 5
+
+
+
+employee_catalog = EmployeeCatalog()

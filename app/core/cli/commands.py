@@ -1,5 +1,6 @@
 from typing import List
 from .localization import messages
+from core.database import employee_catalog
 
 class CommandLine:
     def __init__(self):
@@ -10,9 +11,10 @@ class CommandLine:
         ]
         self.should_exit = False
 
-    def reset_data(self):
+    def reset_data(self, options: None):
         """Reset all data in database"""
-        pass
+        employee_catalog.init_data()
+        
     
     def help(self, options: List[str] | None = None):
         """Show avialable commands with descriptions"""

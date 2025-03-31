@@ -1,10 +1,9 @@
-from core.database import EmployeeCatalog
-from core.settings import Settings
+from core.database import employee_catalog
+from core.settings import settings
 from core.cli.runner import cli_run
 
 
 def main():
-    catalog = EmployeeCatalog()
     cli_run()
 
 
