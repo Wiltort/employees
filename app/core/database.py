@@ -1,7 +1,7 @@
 from core.settings import settings
 from psycopg import connect
 from sqlalchemy import create_engine, MetaData, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from employees.models import Base, POSITION_HIERARCHY, Position, Employee
 from mimesis import Person, Datetime, Finance, Text
 from mimesis.locales import Locale
@@ -110,5 +110,13 @@ class EmployeeCatalog:
         data["manager_id"] = manager_id
         return Employee(**data)
 
+    def test(self):
+        with Session(self.engine) as session:
+            stmt = select(Employee).options(
+                joinedload(Employee.position),
+                joinedload(Employee.manager)
+            ).limit(10)
+            empls = list(session.scalars(stmt))
+        return empls
 
 employee_catalog = EmployeeCatalog()

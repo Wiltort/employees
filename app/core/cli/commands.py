@@ -2,6 +2,7 @@ from typing import List
 from .localization import messages
 from core.database import employee_catalog
 from core.settings import settings
+from core.cli.views import print_employees_table
 
 class CommandLine:
     def __init__(self):
@@ -54,6 +55,12 @@ class CommandLine:
                 description = desc.strip() if desc else "No description available"
                 print(name)
                 print(space + description)
+
+    def empl(self, options: List[str] = []):
+        """employess list"""
+        empls = employee_catalog.test()
+        print_employees_table(empls)
+
 
     def quit(self, options: None):
         """Exit the application"""
