@@ -47,6 +47,11 @@ errors:
     connection: "Ошибка подключения к базе данных: {error}"
     query: "Ошибка выполнения запроса: {error}"
   validation:
+    emp_position: "У работника должна быть позиция"
+    emp_position_id: "Некорректный ID позиции: {id}"
+    emp_ceo_mngr: "CEO не может иметь начальника"
+    emp_mngr_id: "Некорректный ID менеджера: {id}"
+    empl_mngr_position: "Менеджер {id} имеет неверную позицию"
     date: "Некорректный формат даты. Используйте ГГГГ-ММ-ДД"
     salary: "Зарплата должна быть положительным числом"
     employee_have_no_manager: "У сотрудника {employee} нет начальника"
