@@ -1,6 +1,7 @@
 from typing import List
 from .localization import messages
 from core.database import employee_catalog
+from core.settings import settings
 
 class CommandLine:
     def __init__(self):
@@ -11,24 +12,32 @@ class CommandLine:
         ]
         self.should_exit = False
 
-    def reset_data(self, options: None):
+    def gendb(self, options: List[str] | None = None):
         """Reset all data in database"""
-        employee_catalog.init_data()
+        print(messages['ui']['prompts']['gen_data'])
+        if options and len(options) == 1:
+            if options[0] == '-a':
+                employee_catalog.init_data(reset=False)
+        else:
+            employee_catalog.init_data()
+        print(messages['ui']['prompts']['gen_data_complete'].format(n=settings.INITIAL_DATA_COUNT))
         
     
     def help(self, options: List[str] | None = None):
         """Show avialable commands with descriptions"""
-        if options:
+        if options and len(options) == 1:
             if '-v' == options[0]:
                 print(messages['meta']['version'])
                 return
-            if '-a' == options[0]:
+            elif '-a' == options[0]:
                 print(messages['disclaimer']['header'])
                 print(messages['disclaimer']['title'])
                 print(messages['disclaimer']['copyright'].format(
                     year=messages['meta']['year'],
                     author=messages['meta']['author']
                 ))
+            else:
+                raise AttributeError(msg)
             print(messages['disclaimer']['description'])
             print(messages['disclaimer']['warning'])
             return
