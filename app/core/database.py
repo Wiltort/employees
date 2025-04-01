@@ -6,6 +6,7 @@ from employees.models import Base, POSITION_HIERARCHY, Position, Employee
 from mimesis import Person, Datetime, Finance, Text
 from mimesis.locales import Locale
 from mimesis.enums import Gender
+from mimesis.builtins.ru import RussiaSpecProvider
 import random
 
 
@@ -92,7 +93,6 @@ class EmployeeCatalog:
                 session.commit()
     
 
-
     def generate_employee(
         self, position_id: int | None = None, manager_id: int | None = None
     ) -> Employee:
@@ -101,9 +101,9 @@ class EmployeeCatalog:
         gender = random.choice([Gender.MALE, Gender.FEMALE])
         data["first_name"] = self.person.first_name(gender=gender)
         data["last_name"] = self.person.last_name(gender=gender)
-        data["patronymic"] = (
-            self.person.surname(gender=gender) if settings.LANGUAGE == "ru" else None
-        )
+        if settings.LANGUAGE == 'ru':
+            rsp = RussiaSpecProvider()
+            data["patronymic"] = rsp.patronymic(gender=gender)
         data["hire_date"] = self.datetime.date(start=2015, end=2024)
         data["salary"] = self.finance.price(minimum=30000, maximum=300000)
         data["position_id"] = position_id
