@@ -39,8 +39,6 @@ class EmployeeCatalog:
     def init_tables(self):
         """Definition of tables"""
         self.base.metadata.create_all(self.engine)
-        print('OK')
-        self.init_data()
 
     def truncate_all_tables(self):
         """Deletes all data in all tables"""
@@ -65,31 +63,35 @@ class EmployeeCatalog:
                     data.append(Position(title=title, level=level))
                 session.add_all(data)
                 session.commit()
-        emp_count = 0
-        managers = {}
-        for level in range(1, 5):
-            data = []
+        emp_count = rows
+        for level in range(1, 6):
             with Session(self.engine) as session:
+                if level != 1:
+                    stmt = select(Employee.id).join(Position).where(Position.level == level - 1)
+                    manager_ids = list(session.scalars(stmt))
+                data = []
                 stmt = select(Position.id).where(Position.level == level)
                 position_ids = list(session.scalars(stmt))
-                managers[level] = []
                 if not position_ids:
                     continue
-                managers_count = int((0.1 ** (5 - level)) * rows)
-                emp_count += managers_count
-                print(managers_count)
-                for _ in range(managers_count):
+                if level == 5:
+                    count = emp_count
+                else:
+                    managers_count = int((0.1 ** (5 - level)) * rows)
+                    emp_count -= managers_count
+                    count = managers_count
+                for _ in range(count):
                     position_id = random.choice(position_ids)
                     if level != 1:
-                        manager_id = random.choice(managers[level - 1])
+                        manager_id = random.choice(manager_ids)
                     else:
                         manager_id = None
                     manager = self.generate_employee(position_id=position_id, manager_id=manager_id)
-                    managers[level].append(manager.id)
-                    print(managers)
                     data.append(manager)
                 session.add_all(data)
                 session.commit()
+    
+
 
     def generate_employee(
         self, position_id: int | None = None, manager_id: int | None = None

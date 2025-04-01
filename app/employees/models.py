@@ -17,6 +17,8 @@ POSITION_HIERARCHY = [
     ("Manager", 2),
     ("Team Lead", 3),
     ("Senior Developer", 4),
+    ("Senior Analyst", 4),
+    ("Senior Designer", 4),
     ("Developer", 5),
     ("Analyst", 5),
     ("Designer", 5),
