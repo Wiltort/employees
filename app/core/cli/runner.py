@@ -18,4 +18,5 @@ def cli_run():
         try:
             eval(f'cli.{input_command}(options={options})')
         except AttributeError as e:
+            print(e)
             print(messages['errors']['cli']['command'], input_command)

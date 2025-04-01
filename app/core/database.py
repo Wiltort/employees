@@ -68,7 +68,11 @@ class EmployeeCatalog:
         for level in range(1, 6):
             with Session(self.engine) as session:
                 if level != 1:
-                    stmt = select(Employee.id).join(Position).where(Position.level == level - 1)
+                    stmt = (
+                        select(Employee.id)
+                        .join(Position)
+                        .where(Position.level == level - 1)
+                    )
                     manager_ids = list(session.scalars(stmt))
                 data = []
                 stmt = select(Position.id).where(Position.level == level)
@@ -87,11 +91,12 @@ class EmployeeCatalog:
                         manager_id = random.choice(manager_ids)
                     else:
                         manager_id = None
-                    manager = self.generate_employee(position_id=position_id, manager_id=manager_id)
+                    manager = self.generate_employee(
+                        position_id=position_id, manager_id=manager_id
+                    )
                     data.append(manager)
                 session.bulk_save_objects(data)
                 session.commit()
-    
 
     def generate_employee(
         self, position_id: int | None = None, manager_id: int | None = None
@@ -101,7 +106,7 @@ class EmployeeCatalog:
         gender = random.choice([Gender.MALE, Gender.FEMALE])
         data["first_name"] = self.person.first_name(gender=gender)
         data["last_name"] = self.person.last_name(gender=gender)
-        if settings.LANGUAGE == 'ru':
+        if settings.LANGUAGE == "ru":
             rsp = RussiaSpecProvider()
             data["patronymic"] = rsp.patronymic(gender=gender)
         data["hire_date"] = self.datetime.date(start=2015, end=2024)
@@ -112,11 +117,13 @@ class EmployeeCatalog:
 
     def test(self):
         with Session(self.engine) as session:
-            stmt = select(Employee).options(
-                joinedload(Employee.position),
-                joinedload(Employee.manager)
-            ).limit(10)
+            stmt = (
+                select(Employee)
+                .options(joinedload(Employee.position), joinedload(Employee.manager))
+                .limit(10)
+            )
             empls = list(session.scalars(stmt))
         return empls
+
 
 employee_catalog = EmployeeCatalog()

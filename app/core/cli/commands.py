@@ -57,7 +57,7 @@ class CommandLine:
                 print(space + description)
 
     def empl(self, options: List[str] = []):
-        """employess list"""
+        """Prints employess list"""
         empls = employee_catalog.test()
         print_employees_table(empls)
 

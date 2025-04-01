@@ -20,8 +20,8 @@ def print_employees_table(employees: List[Dict]):
                 emp.get_full_name(),
                 emp.position.title,
                 emp.hire_date.strftime('%Y-%m-%d'),
-                f"${emp.salary:,.2f}",
-                f"{emp.manager.get_full_name() or ''}"
+                f"{emp.salary:,.2f}",
+                emp.manager.get_full_name() if emp.manager else '',
             ])
     headers = messages['ui']['views']['emps_tbl']['headers']
     print(tabulate(table_data, headers=headers, tablefmt="grid"))
