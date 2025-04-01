@@ -61,7 +61,7 @@ class EmployeeCatalog:
                 data = []
                 for title, level in POSITION_HIERARCHY:
                     data.append(Position(title=title, level=level))
-                session.add_all(data)
+                session.bulk_save_objects(data)
                 session.commit()
         emp_count = rows
         for level in range(1, 6):
@@ -88,7 +88,7 @@ class EmployeeCatalog:
                         manager_id = None
                     manager = self.generate_employee(position_id=position_id, manager_id=manager_id)
                     data.append(manager)
-                session.add_all(data)
+                session.bulk_save_objects(data)
                 session.commit()
     
 
