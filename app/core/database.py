@@ -115,15 +115,15 @@ class EmployeeCatalog:
         data["manager_id"] = manager_id
         return Employee(**data)
 
-    def get_employees_list(self, filter_field: str | None = None, descending: bool = False):
+    def get_employees_list(self, order_field: str | None = None, descending: bool = False):
         PositionAlias = aliased(Position)
         ManagerAlias = aliased(Employee)
         stmt = select(Employee).options(
             joinedload(Employee.position.of_type(PositionAlias)),
             joinedload(Employee.manager.of_type(ManagerAlias))
         )
-        if filter_field:
-            match filter_field:
+        if order_field:
+            match order_field:
                 case 'id':
                     stmt = stmt.order_by(Employee.id.desc() if descending else Employee.id)  
                 case 'name':

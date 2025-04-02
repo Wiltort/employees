@@ -84,12 +84,12 @@ class CommandLine:
                     sort_opt = opt[3:].split(':')
                     if len(sort_opt) == 1:
                         if sort_opt[0] in self.fields:
-                            arguments['filter_field'] = sort_opt[0]
+                            arguments['order_field'] = sort_opt[0]
                         else:
                             ValueError(messages['errors']['cli']['options'].format(opt=sort_opt[0]))
                     elif len(sort_opt) == 2:
                         if sort_opt[0] in self.fields:
-                            arguments['filter_field'] = sort_opt[0]
+                            arguments['order_field'] = sort_opt[0]
                         else:
                             ValueError(messages['errors']['cli']['options'].format(opt=sort_opt[0]))
                         if sort_opt[1] == '-d':
