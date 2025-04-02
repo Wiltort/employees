@@ -56,9 +56,19 @@ class CommandLine:
                 print(name)
                 print(space + description)
 
-    def empl(self, options: List[str] = []):
+    def empl(self, options: List[str] | None):
         """Prints employess list"""
-        empls = employee_catalog.test()
+        sort_opt = None
+        filter_opts = []
+        limit_opt = 10
+        if options:
+            for opt in options:
+                if '-s:' in opt:
+                    sort_opt = opt[3:]
+                if '-f:' in opt:
+                    filter_opts.append(opt)
+
+        empls = employee_catalog.get_employees_list(sort_opt=sort_opt)
         print_employees_table(empls)
 
 
