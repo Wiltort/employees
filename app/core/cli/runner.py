@@ -20,3 +20,6 @@ def cli_run():
         except AttributeError as e:
             print(e)
             print(messages['errors']['cli']['command'], input_command)
+        except ValueError as e:
+            print(e)
+            print(messages['errors']['cli']['values'])

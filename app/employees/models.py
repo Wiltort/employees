@@ -89,7 +89,7 @@ class Employee(Base):
         return f"{self.last_name} {self.first_name[0]}."
 
     def __repr__(self) -> str:
-        return f"<Employee id={self.id!r} name={self.get_full_name}"
+        return f"<Employee id={self.id!r} name={self.get_full_name()} position={self.position.title}"
 
 
 @event.listens_for(Session, "before_flush")
