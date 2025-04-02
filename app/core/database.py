@@ -115,20 +115,41 @@ class EmployeeCatalog:
         data["manager_id"] = manager_id
         return Employee(**data)
 
-    def get_employees_list(self, sort_opt: str | None):
+    def get_employees_list(self, filter_field: str | None = None, descending: bool = False):
         PositionAlias = aliased(Position)
+        ManagerAlias = aliased(Employee)
         stmt = select(Employee).options(
             joinedload(Employee.position.of_type(PositionAlias)),
-            joinedload(Employee.manager)
+            joinedload(Employee.manager.of_type(ManagerAlias))
         )
-        if sort_opt:
-            match sort_opt:
+        if filter_field:
+            match filter_field:
                 case 'id':
-                    stmt = stmt.order_by(Employee.id)
+                    stmt = stmt.order_by(Employee.id.desc() if descending else Employee.id)  
                 case 'name':
-                    stmt = stmt.order_by(Employee.last_name, Employee.first_name, Employee.patronymic)
+                    stmt = stmt.order_by(
+                        Employee.last_name.desc() if descending else Employee.last_name,
+                        Employee.first_name.desc() if descending else Employee.first_name,
+                        Employee.patronymic.desc() if descending else Employee.patronymic
+                    )
                 case 'position':
-                    stmt = stmt.order_by(PositionAlias.title)
+                    stmt = stmt.order_by(
+                        PositionAlias.title.desc() if descending else PositionAlias.title
+                    )
+                case 'date':
+                    stmt = stmt.order_by(
+                        Employee.hire_date.desc() if descending else Employee.hire_date
+                    )
+                case 'salary':
+                    stmt = stmt.order_by(
+                        Employee.salary.desc() if descending else Employee.salary
+                    )
+                case 'manager':
+                    stmt = stmt.order_by(
+                        ManagerAlias.last_name.desc() if descending else ManagerAlias.last_name,
+                        ManagerAlias.first_name.desc() if descending else ManagerAlias.first_name,
+                        ManagerAlias.patronymic.desc() if descending else ManagerAlias.patronymic
+                    )
         stmt = stmt.limit(10)
         with Session(self.engine) as session:
             empls = list(session.scalars(stmt))

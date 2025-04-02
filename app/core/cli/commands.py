@@ -5,6 +5,14 @@ from core.settings import settings
 from core.cli.views import print_employees_table
 
 class CommandLine:
+    fields = (
+        'id',
+        'name',
+        'position',
+        'date',
+        'salary',
+        'manager',
+    )
     def __init__(self):
         self.commands = [
             (method, getattr(self, method).__doc__)
@@ -12,6 +20,14 @@ class CommandLine:
             if callable(getattr(self, method)) and not method.startswith("_")
         ]
         self.should_exit = False
+        self.fields = (
+            'id',
+            'name',
+            'position',
+            'date',
+            'salary',
+            'manager',
+        )
 
     def gendb(self, options: List[str] | None = None):
         """Reset all data in database"""
@@ -61,14 +77,31 @@ class CommandLine:
         sort_opt = None
         filter_opts = []
         limit_opt = 10
+        arguments = {}
         if options:
             for opt in options:
                 if '-s:' in opt:
-                    sort_opt = opt[3:]
+                    sort_opt = opt[3:].split(':')
+                    if len(sort_opt) == 1:
+                        if sort_opt[0] in self.fields:
+                            arguments['filter_field'] = sort_opt[0]
+                        else:
+                            ValueError(messages['errors']['cli']['options'].format(opt=sort_opt[0]))
+                    elif len(sort_opt) == 2:
+                        if sort_opt[0] in self.fields:
+                            arguments['filter_field'] = sort_opt[0]
+                        else:
+                            ValueError(messages['errors']['cli']['options'].format(opt=sort_opt[0]))
+                        if sort_opt[1] == '-d':
+                            arguments['descending'] = True
+                        else:
+                            ValueError(messages['errors']['cli']['options'].format(opt=sort_opt[1]))
+                    else:
+                        ValueError(messages['errors']['cli']['options'].format(opt=sort_opt))
                 if '-f:' in opt:
                     filter_opts.append(opt)
-
-        empls = employee_catalog.get_employees_list(sort_opt=sort_opt)
+        print(arguments)
+        empls = employee_catalog.get_employees_list(**arguments)
         print_employees_table(empls)
 
 
