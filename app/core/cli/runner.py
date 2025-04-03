@@ -23,3 +23,6 @@ def cli_run():
         except ValueError as e:
             print(e)
             print(messages['errors']['cli']['values'])
+        except TypeError as e:
+            print(e)
+            print(messages['errors']['cli']['values'])

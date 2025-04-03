@@ -139,11 +139,12 @@ class CommandLine:
         if options and len(options) == 1 and options[0][:3] == '-e:':
             arguments = {'root_id': int(options[0][3:])}
             arguments["limit"] = 30
-        if options and len(options) == 2 and options[0][:3] == '-e:':
+        elif options and len(options) == 2 and options[0][:3] == '-e:':
             arguments = {'root_id': int(options[0][3:])}
             if options[1][:3] == '-l:':
                 arguments["limit"] = int(options[1][3:])
-
+        else:
+            raise ValueError('Incorrect options')
         hierarchy = employee_catalog.get_hierarchy(**arguments)
         if hierarchy:
             print_hierarchy(hierarchy)
