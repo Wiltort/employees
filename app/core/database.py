@@ -347,104 +347,57 @@ class EmployeeCatalog:
             empls = list(session.scalars(stmt))
         return empls
 
-    def get_direct_subordinates(self, employee_id: int, limit: int = 25) -> List[Employee]:
-        """
-        Retrieves list of direct subordinates for specified employee.
 
-        :param employee_id: ID of the manager to get subordinates for
-        :type employee_id: int
+    def get_hierarchy(self, root_id: int, limit: int | None = None) -> dict:
+        if limit is not None and limit <= 0:
+            return None
+        
+        with Session(self.engine) as session:
+            employee = session.get(Employee, root_id, options=[
+                joinedload(Employee.position),
+            ])
+            if not employee:
+                return None
 
-        :return: List of direct subordinates with loaded relationships
-        :rtype: List[Employee]
+            if limit is not None:
+                current_limit = limit - 1  # вычесть самого сотрудника
+            else:
+                current_limit = None
 
-        Example usage:
-            subs = get_direct_subordinates(123)
-            for sub in subs:
-                print(f"{sub.get_full_name()} ({sub.position.title})")
-        """
-        PositionAlias = aliased(Position)
-        ManagerAlias = aliased(Employee)
-
-        stmt = (
+        # Загружаем подчиненных с учетом лимита
+        subordinates_stmt = (
             select(Employee)
-            .options(
-                joinedload(Employee.position.of_type(PositionAlias)),
-                joinedload(Employee.manager.of_type(ManagerAlias)),
-            )
-            .where(Employee.manager_id == employee_id)
-            .limit(limit)
+            .where(Employee.manager_id == root_id)
+            .options(joinedload(Employee.position))
         )
+        if current_limit is not None:
+            subordinates_stmt = subordinates_stmt.limit(current_limit)
+            
+        subordinates = session.scalars(subordinates_stmt)
 
-        with Session(self.engine) as session:
-            return list(session.scalars(stmt))
-
-    def get_employee_hierarchy(self, root_id: int | None = None, limit: int = 25) -> List[Dict]:
-        """
-        Retrieves employee hierarchy in tree structure format.
-
-        :param root_id: Starting point for hierarchy (None returns full tree)
-        :type root_id: int | None
-
-        :return: Nested dictionary with employee data and subordinates
-        :rtype: List[Dict]
-
-        Example output:
-        [
-            {
-                "id": 1,
-                "name": "Ivanov Petr Sergeevich",
-                "position": "CEO",
-                "subordinates": [
-                    {
-                        "id": 2,
-                        "name": "Smirnova Anna Vladimirovna",
-                        "position": "Manager",
-                        "subordinates": [...]
-                    }
-                ]
+        hierarchy = {
+            'employee': {
+                'id': employee.id,
+                'name': employee.get_full_name(),
+                'position': employee.position.title,
+                'subordinates': []
             }
-        ]
-        """
-        # Get all employees with their relationships
-        PositionAlias = aliased(Position)
-        ManagerAlias = aliased(Employee)
-        if root_id:
-            stmt = (
-                select(Employee)
-                .options(
-                    joinedload(Employee.position.of_type(PositionAlias)),
-                    joinedload(Employee.manager.of_type(ManagerAlias)),
-                )
-                .where(id=root_id)
-            )
-        else:
-            stmt = (
-                select(Employee)
-                .options(
-                    joinedload(Employee.position.of_type(PositionAlias)),
-                    joinedload(Employee.manager.of_type(ManagerAlias)),
-                )
-                .where(PositionAlias.level == 1)
-            )
-        with Session(self.engine) as session:
-            root_managers = session.scalars(stmt)
-        # Build tree structure
-        hierarchy = []
-        for emp in root_managers:
-            hierarchy.append({
-                "id": emp.id,
-                "name": emp.get_full_name(),
-                "position": emp.position.title,
-            })
+        }
+        if current_limit is not None and current_limit <= 0:
+            return hierarchy
 
+        for subordinate in subordinates:
+            if current_limit is not None and len(hierarchy['employee']['subordinates']) >= current_limit:
+                break
+            sub_hierarchy = self.get_hierarchy(
+                root_id=subordinate.id, limit=current_limit
+            )
+            if sub_hierarchy:
+                hierarchy["employee"]["subordinates"].append(sub_hierarchy)
+                if current_limit is not None:
+                    current_limit -= len(sub_hierarchy['employee']['subordinates']) + 1
+        
         return hierarchy
-
-    def _get_employee_dict(self, emp_list, limit: int = 25):
-        if emp_list == []:
-            return
-        for emp in emp_list:
-            emp["subordinates"] = self.get_direct_subordinates(employee_id=emp['id'], limit=limit)
-    
 
 
 employee_catalog = EmployeeCatalog()

@@ -2,7 +2,7 @@ from typing import List
 from .localization import messages
 from core.database import employee_catalog
 from core.settings import settings
-from core.cli.views import print_employees_table
+from core.cli.views import print_employees_table, print_hierarchy
 
 
 class CommandLine:
@@ -134,8 +134,14 @@ class CommandLine:
         self.should_exit = True
 
     def tree(self, options: List[str] | None = None):
-        """prints employees ierarchy"""
+        """Prints employees hierarchy"""
         arguments = {}
         if options and len(options) == 1 and options[0][:3] == '-e:':
-            arguments = {'employee_id': int(options[0][3:])}
-        print(employee_catalog.get_direct_subordinates(**arguments))
+            arguments = {'root_id': int(options[0][3:])}
+            arguments["limit"] = 10
+        hierarchy = employee_catalog.get_hierarchy(**arguments)
+        if hierarchy:
+            print_hierarchy(hierarchy)
+        else:
+            print(messages["errors"]["cli"]["empty_hierarchy"])
+
