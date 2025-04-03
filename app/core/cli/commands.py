@@ -3,6 +3,7 @@ from .localization import messages
 from core.database import employee_catalog
 from core.settings import settings
 from core.cli.views import print_employees_table, print_hierarchy
+from datetime import date
 
 
 class CommandLine:
@@ -51,7 +52,7 @@ class CommandLine:
                     )
                 )
             else:
-                raise AttributeError(msg)
+                raise AttributeError('Incorrect option')
             print(messages["disclaimer"]["description"])
             print(messages["disclaimer"]["warning"])
             return
@@ -111,7 +112,7 @@ class CommandLine:
                         raise ValueError(
                             messages["errors"]["cli"]["options"].format(opt=filter_opt)
                         )
-                    filter_opts.append({"field": filter_opt[0], "value": filter_opt[1]})
+                    filter_opts.append({"field": filter_opt[0], "value": filter_opt[1].replace('_', ' ')})
                 elif "-l:" == opt[:3]:
                     arguments["limit"] = int(opt[3:])
                 else:
@@ -150,4 +151,36 @@ class CommandLine:
             print_hierarchy(hierarchy)
         else:
             print(messages["errors"]["cli"]["empty_hierarchy"])
+
+    def add(self, options: List[str] | None = None):
+        """Create new employee"""
+        arguments = {'emp_data': {}}
+        for option in options:
+            if option[:3] == '-f:':
+                field, value = option[3:].split('=')
+                if field not in self.fields[1:]:
+                    raise ValueError('Incorrect field')
+                if field == 'name':
+                    name_items = value.split('_')
+                    name_fields = ['last_name', 'first_name', 'patronymic']
+                    for i, v in enumerate(name_items):
+                        arguments['emp_data'][name_fields[i]] = v
+                elif field == 'salary':
+                    arguments['emp_data'][field] = float(value)
+                elif field == 'position':
+                    arguments["emp_data"]['position_id'] = employee_catalog.get_position_id(value)
+                elif field == 'manager':
+                    arguments["emp_data"]['manager_id'] = int(value)
+                elif field == 'date':
+                    try:
+                        year, month, day = map(int, f["value"].split("-"))
+                    except ValueError:
+                        raise ValueError(messages['errors']['validation']['date'])
+                    arguments["emp_data"]['hire_data'] = date(year=year, month=month, day=day)
+                else:
+                    raise ValueError('Incorrect field')
+        if employee_catalog.create_employee(**arguments):
+            print(messages['success']['employee_added'])
+        else:
+            print(messages['errors']['database']['query'])
 

@@ -498,5 +498,12 @@ class EmployeeCatalog:
 
         return root
 
+    def get_position_id(self, position_title):
+        with Session(self.engine) as session:
+            id = session.get(select(Position.id).where(Position.title == position_title))
+        return id
+
+    def create_employee(self, fields: dict) -> bool:
+        pass
 
 employee_catalog = EmployeeCatalog()
