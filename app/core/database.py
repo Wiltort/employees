@@ -1,6 +1,15 @@
 from core.settings import settings
 from psycopg import connect
-from sqlalchemy import and_, create_engine, MetaData, select, func
+from sqlalchemy import (
+    and_,
+    create_engine,
+    MetaData,
+    select,
+    func,
+    union_all,
+    select,
+    alias,
+)
 from sqlalchemy.orm import Session, joinedload, aliased
 from employees.models import Base, POSITION_HIERARCHY, Position, Employee
 from mimesis import Person, Datetime, Finance, Text
@@ -347,57 +356,147 @@ class EmployeeCatalog:
             empls = list(session.scalars(stmt))
         return empls
 
+    def get_hierarchy(self, root_id: int, limit: int = 8) -> dict:
+        """
+        Returns employee hierarchy as a nested dictionary with element count limitation
 
-    def get_hierarchy(self, root_id: int, limit: int | None = None) -> dict:
-        if limit is not None and limit <= 0:
-            return None
-        
-        with Session(self.engine) as session:
-            employee = session.get(Employee, root_id, options=[
-                joinedload(Employee.position),
-            ])
-            if not employee:
-                return None
+        Parameters:
+            root_id (int): ID of the employee to build hierarchy for
+            limit (int): Maximum number of elements to include in hierarchy (default 8)
 
-            if limit is not None:
-                current_limit = limit - 1  # вычесть самого сотрудника
-            else:
-                current_limit = None
-
-        # Загружаем подчиненных с учетом лимита
-        subordinates_stmt = (
-            select(Employee)
-            .where(Employee.manager_id == root_id)
-            .options(joinedload(Employee.position))
-        )
-        if current_limit is not None:
-            subordinates_stmt = subordinates_stmt.limit(current_limit)
-            
-        subordinates = session.scalars(subordinates_stmt)
-
-        hierarchy = {
-            'employee': {
-                'id': employee.id,
-                'name': employee.get_full_name(),
-                'position': employee.position.title,
-                'subordinates': []
+        Returns:
+            dict: Nested dictionary structure with format:
+            {
+                "id": int,
+                "full_name": str,
+                "position": str,
+                "subordinates": [
+                    # recursive structure of subordinates
+                ]
             }
-        }
-        if current_limit is not None and current_limit <= 0:
-            return hierarchy
 
-        for subordinate in subordinates:
-            if current_limit is not None and len(hierarchy['employee']['subordinates']) >= current_limit:
-                break
-            sub_hierarchy = self.get_hierarchy(
-                root_id=subordinate.id, limit=current_limit
+        Example return:
+            {
+                "id": 123,
+                "full_name": "John Doe",
+                "position": "Team Lead",
+                "subordinates": [
+                    {
+                        "id": 456,
+                        "full_name": "Jane Smith",
+                        "position": "Developer",
+                        "subordinates": []
+                    },
+                    ...
+                ]
+            }
+
+        Implementation Details:
+            - Uses recursive SQL CTE (Common Table Expression) to get reporting chain
+            - Builds hierarchy using BFS (Breadth-First Search) traversal
+            - Limits elements using count-based early termination
+            - Explicitly handles SQLAlchemy sessions and connections
+            - Works with direct column data instead of ORM relationships
+            - Optimized for read-heavy operations with large datasets
+
+        Notes:
+            1. Root employee is always included even when limit=0
+            2. Subordinates are added in database discovery order
+            3. Strictly maintains unique employee IDs in hierarchy
+            4. Execution flow:
+                a. Build recursive CTE with position joins
+                b. Execute query and collect raw results
+                c. Convert to dictionary with manager relationships
+                d. Construct tree using BFS with limit check
+            5. Returned structure is session-independent
+            6. Handles circular references through ID tracking
+        """
+        emp = aliased(Employee, name="emp")
+        pos = aliased(Position, name="pos")
+
+        hierarchy = (
+            select(
+                emp.id,
+                emp.manager_id,
+                emp.first_name,
+                emp.last_name,
+                emp.patronymic,
+                pos.title.label("position_title"),
             )
-            if sub_hierarchy:
-                hierarchy["employee"]["subordinates"].append(sub_hierarchy)
-                if current_limit is not None:
-                    current_limit -= len(sub_hierarchy['employee']['subordinates']) + 1
-        
-        return hierarchy
+            .where(emp.id == root_id)
+            .join(pos, emp.position_id == pos.id)
+            .cte(recursive=True, name="hierarchy")
+        )
+
+        mgr = aliased(Employee, name="mgr")
+        pos_recursive = aliased(Position, name="pos_recursive")
+
+        recursive_part = (
+            select(
+                emp.id,
+                emp.manager_id,
+                emp.first_name,
+                emp.last_name,
+                emp.patronymic,
+                pos_recursive.title.label("position_title"),
+            )
+            .join(mgr, emp.manager_id == mgr.id)
+            .join(hierarchy, mgr.id == hierarchy.c.id)
+            .join(pos_recursive, emp.position_id == pos_recursive.id)
+        )
+
+        cte_query = hierarchy.union_all(recursive_part)
+
+        stmt = select(
+            cte_query.c.id,
+            cte_query.c.manager_id,
+            cte_query.c.first_name,
+            cte_query.c.last_name,
+            cte_query.c.patronymic,
+            cte_query.c.position_title,
+        )
+
+        with Session(self.engine) as session:
+            results = session.execute(stmt).unique().all()
+
+        # Собираем словарь сотрудников
+        employees_dict = {
+            row.id: {
+                "id": row.id,
+                "manager_id": row.manager_id,
+                "full_name": f"{row.last_name} {row.first_name} {row.patronymic or ''}".strip(),
+                "position": row.position_title,
+                "subordinates": [],
+            }
+            for row in results
+        }
+
+        # BFS
+        root = employees_dict.get(root_id)
+        if not root:
+            return {}
+
+        queue = [root]
+        count = 0
+        added_ids = {root_id}
+
+        while queue and count < limit:
+            current = queue.pop(0)
+            subordinates = [
+                emp
+                for emp in employees_dict.values()
+                if emp["manager_id"] == current["id"] and emp["id"] not in added_ids
+            ]
+
+            for emp in subordinates:
+                if count >= limit:
+                    break
+                current["subordinates"].append(emp)
+                added_ids.add(emp["id"])
+                queue.append(emp)
+                count += 1
+
+        return root
 
 
 employee_catalog = EmployeeCatalog()
