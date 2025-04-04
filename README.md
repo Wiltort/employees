@@ -47,6 +47,6 @@ LANGUAGE=ru  # en/ru
 ```bash
 python app/main.py
 ```
-
+On first running init dataset by command `gendb`.
 ⚠️ **Warning:** Always back up your database before performing destructive operations. Use `gendb` command with caution.
 
