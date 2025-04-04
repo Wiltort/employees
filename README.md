@@ -21,7 +21,7 @@ A high-performance command-line utility for managing enterprise employee databas
 ## 🚀 Installation
 
 ```bash
-git clone https://github.com/yourrepo/employees.git
+git clone https://github.com/Wiltort/employees.git
 cd employees
 pip install -r requirements.txt
 
