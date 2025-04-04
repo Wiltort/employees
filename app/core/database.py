@@ -1,5 +1,4 @@
 from core.settings import settings
-from psycopg import connect
 from sqlalchemy import (
     and_,
     create_engine,
@@ -667,5 +666,12 @@ class EmployeeCatalog:
             session.commit()
             session.refresh(employee)
             return employee
+
+    def delete_employee(self, id: int):
+        with Session(self.engine) as session:
+            employee = session.get(Employee, id)
+            session.delete(employee)
+            session.commit()
+
 
 employee_catalog = EmployeeCatalog()

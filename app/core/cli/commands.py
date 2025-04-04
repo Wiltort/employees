@@ -219,3 +219,12 @@ class CommandLine:
             print(messages['success']['employee_added'].format(id=emp.id))
         except Exception as e:
             print(messages['errors']['database']['query'].format(error=e))
+
+    def dlt(self, options: List[str]):
+        if options[0][:3] == '-e:':
+            id = int(options[0][3:])
+        try:
+            employee_catalog.delete_employee(id=id)
+            print(messages['success']['employee_deleted'])
+        except Exception as e:
+            print(messages['errors']['database']['query'].format(error=e))

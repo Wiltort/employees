@@ -1,0 +1,133 @@
+
+meta:
+  author: "Viktor Korolev"
+  year: 2025
+  version: "1.0.0"
+
+disclaimer:
+  header: |
+    ███████╗███╗   ███╗██████╗ ██╗      ██████╗ ██╗   ██╗███████╗███████╗
+    ██╔════╝████╗ ████║██╔══██╗██║     ██╔═══██╗╚██╗ ██╔╝██╔════╝██╔════╝
+    █████╗  ██╔████╔██║██████╔╝██║     ██║   ██║ ╚████╔╝ █████╗  █████╗  
+    ██╔══╝  ██║╚██╔╝██║██╔═══╝ ██║     ██║   ██║  ╚██╔╝  ██╔══╝  ██╔══╝  
+    ███████╗██║ ╚═╝ ██║██║     ███████╗╚██████╔╝   ██║   ███████╗███████╗
+    ╚══════╝╚═╝     ╚═╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝   ╚══════╝╚══════╝
+  title: "Employee Database Management Tool"
+  copyright: "(c) {year} {author}"
+  description: |
+    Employee catalog management system supporting 50,000+ records.
+    Hierarchical structure, advanced search and CRUD operations.
+  warning: |
+    ⚠️ WARNING: The program performs direct database operations.
+    All destructive actions are irreversible. Create a backup first.
+  help_prompt: "Type 'help' to see available commands"
+
+commands:
+  help:
+    usage: "help [-v | -a]"
+    description: "Employee Database Management Tool command reference"
+    options:
+      - "                Show this help"
+      - "-v              Show program version"
+      - "-a              About the program"
+  quit:
+    usage: "quit"
+    description: "Exit the Employee Database Management Tool"
+  list:
+    description: "Show employee list"
+    options:
+      - "--filter FIELD:VALUE  Filter by fields"
+      - "--sort FIELD          Sort by (name, position, salary)"
+      - "--limit N             Limit results"
+  gendb:
+    usage: "gendb [-a]"
+    description: "Reset all data and generate new sample data. Irreversible operation."
+    options:
+      - "-a              Keep existing database records"
+  empl:
+    usage: "empl [-s:<field>:[-d]] ... [-f:<criteria>] ... [-l:<limit>]"
+    description: "Display employee table with sorting and filtering"
+    options:
+      - "-s:<field>      Sort ascending by field"
+      - "-s:<field>:-d   Sort descending by field"
+      - "<field> = <id | name | position | date | salary | manager>"
+      - "-f:<criteria>   Filter by criteria"
+      - "<criteria> = <<field>=<value>>"
+      - "-l:<limit>      Limit displayed records (default: 10)"
+  tree:
+    usage: "tree -e:<id> [-l:<number>]"
+    description: "Display employee hierarchy as tree"
+    options:
+      - "-e:<id>        Root employee ID (required)"
+      - "-l:<number>     Limit displayed items (default: 30)"
+  add:
+    usage: "add -f:<field=value> [...]"
+    description: "Add new employee to database"
+    options:
+      - "-f:name=NAME            Full name in 'Last_First_Middle' format"
+      - "-f:position=POSITION    Job title (Manager/Developer/...)"
+      - "-f:salary=SALARY        Monthly salary amount"
+      - "-f:date=DATE            Hire date (YYYY-MM-DD)"
+      - "-f:manager_id=ID        Direct manager ID"
+  upd:
+    usage: "upd -id:<ID> -f:<field=value> [...]"
+    description: "Update existing employee data"
+    options:
+      - "-id:<ID>             Required employee ID"
+      - "-f:name=NAME         New full name"
+      - "-f:position=POSITION  New job title"
+      - "-f:position_id=ID    New position ID (alternative to title)"
+      - "-f:salary=SALARY     New monthly salary"
+      - "-f:date=DATE         New hire date (YYYY-MM-DD)"
+      - "-f:manager_id=ID     New manager ID"
+  dlt:
+    usage: "dlt -id:<ID>"
+    description: "Delete employee (only if no subordinates)"
+    options:
+      - "-id:<ID>             Required employee ID"
+
+errors:
+  database:
+    connection: "Database connection error: {error}"
+    query: "Query execution error: {error}"
+  validation:
+    emp_position: "Employee must have a position"
+    emp_position_id: "Invalid position ID: {id}"
+    emp_ceo_mngr: "CEO cannot have a manager"
+    emp_mngr_id: "Invalid manager ID: {id}"
+    empl_mngr_position: "Manager {id} has invalid position"
+    date: "Invalid date format. Use YYYY-MM-DD"
+    salary: "Salary must be a positive number"
+    employee_have_no_manager: "Employee {employee} has no manager"
+    manager_level: "Manager {manager} has lower position than employee {employee}"
+  cli:
+    command: "Unknown command:"
+    empty_table: "Table is empty"
+    options: "Invalid option: {opt}"
+    values: "Invalid options or data entered"
+
+success:
+  employee_added: "✅ Employee added successfully (ID: {id})"
+  employee_updated: "✅ Employee data updated"
+  employee_deleted: "✅ Employee deleted"
+
+ui:
+  prompts:
+    add_employee: "Adding new employee"
+    update_employee: "Updating employee ID: {id}"
+    exit: "Exiting program..."
+    gen_data: "Generating database data..."
+    gen_data_complete: "Added {n} new employees"
+  views:
+    emps_tbl: 
+      title: "Employee Details"
+      title_one: "Employee Detail"
+      headers:
+        - "ID"
+        - "Full Name"
+        - "Position"
+        - "Hire Date"
+        - "Salary"
+        - "Manager"
+  info:
+    options: "Options:"
