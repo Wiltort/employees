@@ -519,10 +519,8 @@ class EmployeeCatalog:
         :param emp_data: Dictionary with employee data. Supported keys:
             - first_name: Employee's first name (required if no full_name)
             - last_name: Employee's last name (required if no full_name)
-            - full_name: Combined name in 'Last_First_Patronymic' format
             - patronymic: Middle name (optional)
             - position_id: ID of employee's position
-            - position: Title of position (alternative to position_id)
             - manager_id: ID of direct manager
             - hire_date: Date of hire (YYYY-MM-DD format)
             - salary: Monthly salary amount
@@ -534,10 +532,6 @@ class EmployeeCatalog:
         :raises ValueError: For missing required fields or invalid position/manager
 
         Example usage:
-            Create with minimal data:
-            create_employee({
-                'full_name': 'Иванов_Петр_Сергеевич'
-            })
 
             Create with explicit fields:
             create_employee({
@@ -548,7 +542,6 @@ class EmployeeCatalog:
             })
 
         Features:
-            - Automatic name parsing from full_name field
             - Position lookup by title or ID
             - Manager auto-assignment based on position hierarchy
             - Default values for missing fields:
@@ -605,5 +598,74 @@ class EmployeeCatalog:
             session.refresh(new_employee)
         return new_employee
 
+    def update_employee(self, id: int, emp_data: dict) -> Employee:
+        """
+        Updates existing employee with validation and data integrity checks.
+
+        :param id: ID of employee to update
+        :param emp_data: Dictionary with update data (same as create_employee)
+        :return: Updated Employee object
+        :raises ValueError: If employee not found or invalid data
+        """
+        with Session(self.engine) as session:
+            # Get existing employee
+            employee = session.get(Employee, id)
+            if not employee:
+                raise ValueError(f"Employee with ID {id} not found")
+
+            # Update basic fields
+            if 'first_name' in emp_data:
+                employee.first_name = emp_data['first_name']
+            if 'last_name' in emp_data:
+                employee.last_name = emp_data['last_name']
+            if 'patronymic' in emp_data:
+                employee.patronymic = emp_data['patronymic']
+            if 'hire_date' in emp_data:
+                employee.hire_date = emp_data['hire_date']
+            if 'salary' in emp_data:
+                if emp_data['salary'] <= 0:
+                    raise ValueError("Salary must be positive")
+                employee.salary = emp_data['salary']
+
+            # Handle position change
+            if 'position_id' in emp_data or 'position' in emp_data:
+                new_position_id = emp_data.get('position_id') or self.get_position_id(emp_data['position'])
+                new_position = session.get(Position, new_position_id)
+
+                if not new_position:
+                    raise ValueError("Invalid position")
+
+                # Clear manager if moving to top level
+                if new_position.level == 1:
+                    employee.manager_id = None
+                elif new_position.level != employee.position.level:
+                    # Auto-assign manager for new level
+                    stmt = select(Employee.id).join(Position).where(
+                        Position.level == new_position.level - 1
+                    )
+                    managers = session.scalars(stmt).all()
+                    if not managers:
+                        raise ValueError("No available managers for this position level")
+                    employee.manager_id = random.choice(managers)
+
+                employee.position_id = new_position_id
+
+            # Handle manager change
+            if 'manager_id' in emp_data:
+                if emp_data['manager_id']:
+                    manager = session.get(Employee, emp_data['manager_id'])
+                    if not manager:
+                        raise ValueError("Manager not found")
+                    if manager.position.level >= employee.position.level:
+                        raise ValueError("Manager must be from higher level")
+                employee.manager_id = emp_data['manager_id']
+
+            # Validate final state
+            if employee.position.level > 1 and not employee.manager_id:
+                raise ValueError("Non-top level employees must have a manager")
+
+            session.commit()
+            session.refresh(employee)
+            return employee
 
 employee_catalog = EmployeeCatalog()

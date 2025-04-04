@@ -185,3 +185,37 @@ class CommandLine:
         except Exception as e:
             print(messages['errors']['database']['query'].format(error=e))
 
+    def upd(self, options: List[str] | None = None):
+        """Update employee"""
+        arguments = {'emp_data': {}}
+        for option in options:
+            if option[:3] == '-e:':
+                id = int(option[3:])
+            if option[:3] == '-f:':
+                field, value = option[3:].split('=')
+                if field not in self.fields[1:]:
+                    raise ValueError('Incorrect field')
+                if field == 'name':
+                    name_items = value.split('_')
+                    name_fields = ['last_name', 'first_name', 'patronymic']
+                    for i, v in enumerate(name_items):
+                        arguments['emp_data'][name_fields[i]] = v
+                elif field == 'salary':
+                    arguments['emp_data'][field] = float(value)
+                elif field == 'position':
+                    arguments["emp_data"]['position_id'] = employee_catalog.get_position_id(value)
+                elif field == 'manager':
+                    arguments["emp_data"]['manager_id'] = int(value)
+                elif field == 'date':
+                    try:
+                        year, month, day = map(int, value.split("-"))
+                    except ValueError:
+                        raise ValueError(messages['errors']['validation']['date'])
+                    arguments["emp_data"]['hire_date'] = value
+                else:
+                    raise ValueError('Incorrect field')
+        try:
+            emp = employee_catalog.update_employee(id=id, **arguments)
+            print(messages['success']['employee_added'].format(id=emp.id))
+        except Exception as e:
+            print(messages['errors']['database']['query'].format(error=e))
