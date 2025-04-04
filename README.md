@@ -1,4 +1,4 @@
-# EMPLOYEES 🔍
+# EMPLOYEE 🔍
 
 **Enterprise Employee Database Management System**
 
