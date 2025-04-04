@@ -26,3 +26,7 @@ def cli_run():
         except TypeError as e:
             print(e)
             print(messages['errors']['cli']['values'])
+        except SyntaxError as e:
+            print(e)
+            print(messages['errors']['cli']['command'], input_command)
+

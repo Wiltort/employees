@@ -173,14 +173,15 @@ class CommandLine:
                     arguments["emp_data"]['manager_id'] = int(value)
                 elif field == 'date':
                     try:
-                        year, month, day = map(int, f["value"].split("-"))
+                        year, month, day = map(int, value.split("-"))
                     except ValueError:
                         raise ValueError(messages['errors']['validation']['date'])
-                    arguments["emp_data"]['hire_data'] = date(year=year, month=month, day=day)
+                    arguments["emp_data"]['hire_date'] = value
                 else:
                     raise ValueError('Incorrect field')
-        if employee_catalog.create_employee(**arguments):
-            print(messages['success']['employee_added'])
-        else:
-            print(messages['errors']['database']['query'])
+        try:
+            emp = employee_catalog.create_employee(**arguments)
+            print(messages['success']['employee_added'].format(id=emp.id))
+        except Exception as e:
+            print(messages['errors']['database']['query'].format(error=e))
 

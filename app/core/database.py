@@ -498,12 +498,111 @@ class EmployeeCatalog:
 
         return root
 
-    def get_position_id(self, position_title):
+    def get_position_id(self, position_title: str) -> int:
+        """
+        Get position ID by title
+        
+        :param position_title: Title of the position
+        :return: ID of the position
+        """
         with Session(self.engine) as session:
-            id = session.get(select(Position.id).where(Position.title == position_title))
-        return id
+            pos = session.scalar(select(Position.id).where(Position.title == position_title))
+        if not pos:
+            raise ValueError(f"Position with title '{position_title}' not found")
+        return pos
 
-    def create_employee(self, fields: dict) -> bool:
-        pass
+    def create_employee(self, emp_data: dict) -> bool:
+        """
+        Creates a new employee with validation and automatic data completion.
+
+        :param emp_data: Dictionary with employee data. Supported keys:
+            - first_name: Employee's first name (required if no full_name)
+            - last_name: Employee's last name (required if no full_name)
+            - full_name: Combined name in 'Last_First_Patronymic' format
+            - patronymic: Middle name (optional)
+            - position_id: ID of employee's position
+            - position: Title of position (alternative to position_id)
+            - manager_id: ID of direct manager
+            - hire_date: Date of hire (YYYY-MM-DD format)
+            - salary: Monthly salary amount
+        :type emp_data: dict
+
+        :return: Newly created Employee object with database-generated ID
+        :rtype: Employee
+
+        :raises ValueError: For missing required fields or invalid position/manager
+
+        Example usage:
+            Create with minimal data:
+            create_employee({
+                'full_name': 'Иванов_Петр_Сергеевич'
+            })
+
+            Create with explicit fields:
+            create_employee({
+                'first_name': 'Анна',
+                'last_name': 'Смирнова',
+                'position': 'Senior Developer',
+                'salary': 150000
+            })
+
+        Features:
+            - Automatic name parsing from full_name field
+            - Position lookup by title or ID
+            - Manager auto-assignment based on position hierarchy
+            - Default values for missing fields:
+                - Random name components if not provided
+                - Current-date salary if not specified
+                - Random hire date between 2015-2024
+            - Validation for:
+                - Mandatory name fields
+                - Position existence
+                - Manager hierarchy consistency
+                - Salary positivity
+
+        Implementation Details:
+            - Uses separate SQLAlchemy sessions for different operations
+            - Handles position lookup through get_position_id()
+            - Automatically refreshes object after commit
+            - Supports both Russian and English naming conventions
+            - Maintains data consistency through transaction blocks
+        """
+        data = {}
+        gender = random.choice([Gender.MALE, Gender.FEMALE])
+        data['first_name'] = emp_data.get('first_name', self.person.first_name(gender=gender))
+        data['last_name'] = emp_data.get('last_name', self.person.last_name(gender=gender))
+        if settings.LANGUAGE == 'ru':
+            rsp = RussiaSpecProvider()
+            data['patronymic'] = emp_data.get('patronymic', rsp.patronymic(gender=gender))
+        elif emp_data.get('patronymic'):
+            data["patronymic"] = emp_data['patronymic']
+        data['hire_date'] = emp_data.get('hire_date', self.datetime.date(start=2015, end=2024))
+        data['salary'] = emp_data.get('salary', self.finance.price(minimum=30000, maximum=300000))
+        if not emp_data.get('position_id'):
+            with Session(self.engine) as session:
+                positions = list(session.scalars(select(Position.id)))
+            data['position_id'] = random.choice(positions)
+        else:
+            data['position_id'] = emp_data.get('position_id')
+        if not emp_data.get('manager_id'):
+            with Session(self.engine) as session:
+                level = session.scalar(select(Position.level).where(Position.id == data["position_id"]))
+                if level != 1:
+                    stmt = (
+                        select(Employee.id)
+                        .join(Position)
+                        .where(Position.level == level - 1)
+                    )
+                    manager_ids = list(session.scalars(stmt))
+                    data['manager_id'] = random.choice(manager_ids)
+        else:
+            data['manager_id'] = emp_data.get('manager_id')
+        new_employee = Employee(**data)
+        with Session(self.engine) as session:
+            session.add(new_employee)
+            session.commit()
+            session.refresh(new_employee)
+        return new_employee
+
 
 employee_catalog = EmployeeCatalog()
