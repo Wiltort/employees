@@ -174,7 +174,8 @@ class EmployeeCatalog:
         data["hire_date"] = self.datetime.date(start=2015, end=2024)
         data["salary"] = self.finance.price(minimum=30000, maximum=300000)
         data["position_id"] = position_id
-        data["manager_id"] = manager_id
+        if manager_id:
+            data["manager_id"] = manager_id
         return Employee(**data)
 
     def get_employees_list(
@@ -244,7 +245,7 @@ class EmployeeCatalog:
                     ).ilike(search_value)
                     filter_stmt.append(filter_expr)
                 case "position":
-                    filter_stmt.append(PositionAlias.title.ilike(f"%{f["value"]}%"))
+                    filter_stmt.append(PositionAlias.title.ilike(f"%{f['value']}%"))
                 case "date":
                     if "-" in f["value"]:
                         try:
