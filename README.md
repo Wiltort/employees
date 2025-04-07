@@ -16,7 +16,6 @@ A high-performance command-line utility for managing enterprise employee databas
 - **Data Generation** - Instant test datasets with `gendb`
 - **Multi-language Support** - Built-in localization (EN/RU)
 - **Validation System** - 20+ integrity checks and constraints
-- **Audit Logging** - All changes tracked automatically
 
 ## 🚀 Installation
 
